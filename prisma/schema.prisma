@@ -1,0 +1,272 @@
+// Assisted Pulse — Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+  engineType = "library"
+}
+
+// Supabase Postgres. DATABASE_URL is the pooled (pgbouncer) connection used at
+// runtime; DIRECT_URL is the direct 5432 connection used for migrations.
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES_PERSON
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ASSIGNED
+  HUMAN_TAKEOVER
+  CLOSED
+  UNASSIGNED_QUEUE
+}
+
+enum LeadStatus {
+  NEW
+  HOT
+  COLD
+  FOLLOW_UP
+  CONVERTED
+  LOST
+}
+
+enum MessageSenderType {
+  CLIENT
+  AI_BOT
+  SALES_PERSON
+  SYSTEM
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(SALES_PERSON)
+  isActive     Boolean  @default(true)
+  rrSequence   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+
+  assignedConversations Conversation[]  @relation("AssignedTo")
+  assignmentLogs        AssignmentLog[] @relation("AssignedToUser")
+  messagesSent          Message[]       @relation("SentBy")
+
+  @@index([role, isActive])
+}
+
+model WhatsAppConfig {
+  id             String  @id @default(uuid())
+  phoneNumberId  String  @unique
+  wabaId         String
+  accessTokenEnc String
+  displayName    String
+  displayPhone   String
+  isActive       Boolean @default(true)
+
+  // AI Bot Config
+  aiSystemPrompt String  @db.Text
+  aiModel        String  @default("gemini-3.6-flash")
+  aiEnabled      Boolean @default(true)
+
+  // Round Robin pointer
+  rrPointer Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id String @id @default(uuid())
+
+  // Applicant WhatsApp info
+  clientWaNumber String
+  clientName     String?
+
+  // Status & Lead
+  status     ConversationStatus @default(ACTIVE)
+  leadStatus LeadStatus         @default(NEW)
+
+  // Assignment
+  assignedToId String?
+  assignedTo   User?    @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedAt   DateTime?
+
+  // AI Control
+  aiEnabled Boolean @default(true)
+
+  // Set when the applicant is stuck or explicitly asks for a human — this is what
+  // moves the conversation into the unassigned queue for a human to take over.
+  needsHumanAt     DateTime?
+  needsHumanReason String?
+
+  // 24-hour window tracking
+  lastClientMessageAt DateTime?
+
+  // Notes
+  internalNotes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages       Message[]
+  assignmentLogs AssignmentLog[]
+
+  @@index([clientWaNumber])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([lastClientMessageAt])
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id])
+
+  direction  String
+  senderType MessageSenderType
+
+  // For outbound by sales person
+  sentById String?
+  sentBy   User?   @relation("SentBy", fields: [sentById], references: [id])
+
+  // Content
+  content   String  @db.Text
+  mediaUrl  String?
+  mediaType String?
+
+  // Media understanding — voice-note transcript, image OCR, or parsed PDF text.
+  // This is what the AI actually reads for non-text messages.
+  transcript    String? @db.Text
+  mediaMimeType String?
+  mediaBytes    Int?
+
+  // Template info
+  isTemplate     Boolean @default(false)
+  templateName   String?
+  templateParams Json?
+
+  // Meta tracking
+  waMessageId String?       @unique
+  status      MessageStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId, createdAt])
+  @@index([waMessageId])
+}
+
+model AssignmentLog {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedToUser", fields: [assignedToId], references: [id])
+
+  method       String
+  assignedById String?
+  notes        String?
+
+  createdAt DateTime @default(now())
+}
+
+model WhatsAppTemplate {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  displayName String
+  category    String
+  language    String  @default("en")
+  bodyText    String  @db.Text
+  variables   Json?
+  status      String  @default("APPROVED")
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id             String  @id @default(uuid())
+  userId         String
+  title          String
+  body           String
+  type           String
+  conversationId String?
+  isRead         Boolean @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model PushSubscription {
+  id       String   @id @default(uuid())
+  userId   String
+  endpoint String   @unique
+  p256dh   String
+  auth     String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// One applicant, keyed by their WhatsApp number. This is the persistent memory —
+// everything ever collected for a number lives here and is never re-asked.
+model ApplicantProfile {
+  id           String  @id @default(uuid())
+  waNumber     String  @unique
+  formData     Json    @default("{}")
+  formComplete Boolean @default(false)
+
+  // Normalised copies used for the local duplicate pre-check before submitting.
+  niNumberNorm String?
+  emailNorm    String?
+
+  // Care360 submission state
+  care360ApplicantId String?
+  care360SubmittedAt DateTime?
+  submitInFlightAt   DateTime?
+  lastSubmitError    String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([waNumber])
+  @@index([niNumberNorm])
+  @@index([emailNorm])
+}
+
+// Local mirror of GET /non-auth/get/branches
+model Care360Branch {
+  branchId  String   @id
+  name      String
+  slug      String?
+  updatedAt DateTime @updatedAt
+}
+
+// Local mirror of the nationalities / ethnicities / religions dropdowns.
+// An ID is never sent to Care360 unless it exists in this table.
+model Care360Lookup {
+  id        String   @id @default(uuid())
+  type      String // "nationality" | "ethnicity" | "religion"
+  refId     String // Care360 id, e.g. "q2w274"
+  name      String
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, refId])
+  @@index([type])
+}
