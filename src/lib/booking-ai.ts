@@ -29,11 +29,12 @@ function client(): GoogleGenAI {
   if (!apiKey) throw new Error("GEMINI_API_KEY not set");
   // The SDK retries 5xx/network errors up to 5 times by default, and on a
   // sustained "model overloaded" 503 that can silently stretch a
-  // webhook-triggered reply to minutes. One attempt + a 15s cap keeps the
-  // worst case short; our own caller already handles the failure gracefully.
+  // webhook-triggered reply to minutes. One attempt + a 20s cap keeps the
+  // worst case short enough to fit inside the webhook route's 60s
+  // maxDuration alongside our own manual retry in ai-processor.ts.
   return new GoogleGenAI({
     apiKey,
-    httpOptions: { timeout: 30000, retryOptions: { attempts: 1 } },
+    httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
   });
 }
 

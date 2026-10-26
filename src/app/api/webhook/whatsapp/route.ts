@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendTextMessage } from "@/lib/whatsapp";
@@ -11,6 +11,10 @@ import {
   UnsupportedMediaError,
 } from "@/lib/whatsapp-media";
 import { extractFromMedia, wrapExtractedText } from "@/lib/media-extract";
+
+// Default serverless function timeout (10s on Hobby) is too short for the
+// after() background work below (Gemini call + retry + WhatsApp send).
+export const maxDuration = 60;
 
 // ==========================================
 // GET — Meta webhook verification handshake
@@ -329,15 +333,18 @@ async function processIncomingMessage(message: MetaMessage, contactName: string 
     });
 
     if (config?.aiEnabled !== false) {
-      // Fire-and-forget, not awaited: Meta expects a fast webhook response
-      // (a slow Gemini retry can take minutes), and this is a long-running
-      // Node server — not serverless/edge — so the process stays alive to
-      // finish the promise after the response is sent. next/server's after()
-      // was tried here first but silently drops the callback behind this
-      // app's custom proxy.ts, which doesn't implement the waitUntil hook
-      // after() depends on.
-      processAIReply(conversation.id, clientWaNumber).catch((err) => {
-        console.error(`[booking] processAIReply (background) failed for ${conversation.id}:`, err);
+      // after() is Vercel's native background-task primitive (waitUntil) —
+      // the webhook response goes out immediately, but the serverless
+      // function instance is kept alive until this finishes (up to
+      // maxDuration below), instead of being frozen/killed the moment the
+      // response is sent, which is what happens to a bare un-awaited
+      // promise in a serverless runtime.
+      after(async () => {
+        try {
+          await processAIReply(conversation.id, clientWaNumber);
+        } catch (err) {
+          console.error(`[booking] processAIReply (background) failed for ${conversation.id}:`, err);
+        }
       });
       console.log(`🤖 AI reply scheduled for conversation ${conversation.id}`);
     }
