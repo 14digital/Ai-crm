@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, Save, Play, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Bot, Save, Play, CheckCircle, AlertCircle } from "lucide-react";
 import { AI_MODEL_OPTIONS, DEFAULT_AI_MODEL } from "@/lib/models";
 
 interface BotConfig {
@@ -40,26 +40,6 @@ export default function BotConfigPage() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
-
-  const [syncingBranches, setSyncingBranches] = useState(false);
-  const [branchSyncMsg, setBranchSyncMsg] = useState<string | null>(null);
-
-  async function syncCare360Reference() {
-    setSyncingBranches(true);
-    setBranchSyncMsg(null);
-    const res = await fetch("/api/admin/care360/sync", { method: "POST" });
-    const data = await res.json();
-    setSyncingBranches(false);
-    if (res.ok) {
-      const c = data.counts;
-      setBranchSyncMsg(
-        `Synced ${c.branches} branches, ${c.nationalities} nationalities, ${c.ethnicities} ethnicities, ${c.religions} religions`
-      );
-    } else {
-      setBranchSyncMsg(data.error || "Sync failed");
-    }
-    setTimeout(() => setBranchSyncMsg(null), 4000);
-  }
 
   useEffect(() => {
     fetch("/api/admin/bot-config")
@@ -162,39 +142,6 @@ export default function BotConfigPage() {
                   width: 22, height: 22, borderRadius: "50%", background: "white",
                   transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
                 }} />
-              </button>
-            </div>
-          </div>
-
-          {/* Care360 reference-data sync */}
-          <div className="card" style={{ padding: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-                  Care360 Reference Data
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-                  Sync branches, nationalities, ethnicities and religions from Care360. Required before applications can be submitted.
-                </div>
-                {branchSyncMsg && (
-                  <div style={{ fontSize: 12, color: "var(--primary)", marginTop: 6, fontWeight: 500 }}>
-                    {branchSyncMsg}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={syncCare360Reference}
-                disabled={syncingBranches}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
-                  borderRadius: 8, fontSize: 13, fontWeight: 600,
-                  border: "1px solid var(--border-light)", background: "var(--bg)",
-                  color: "var(--text-primary)", cursor: syncingBranches ? "not-allowed" : "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                <RefreshCw size={13} className={syncingBranches ? "spinner" : ""} />
-                {syncingBranches ? "Syncing…" : "Sync Now"}
               </button>
             </div>
           </div>
