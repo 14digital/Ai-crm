@@ -130,7 +130,7 @@ export default function TermsOfServicePage() {
               We use <strong>WhatsApp Business</strong> as a primary channel for
               customer communication, powered by the{" "}
               <strong>WhatsApp Business Cloud API</strong> (Meta Platforms,
-              Inc.) and managed through <strong>NexaDesk</strong> (a CRM
+              Inc.) and managed through <strong>Glow Studio Desk</strong> (a CRM
               tool by 14Digital Limited, UK).
             </p>
             <p style={styles.text}>
@@ -380,12 +380,12 @@ export default function TermsOfServicePage() {
             </a>
             {" "}| WhatsApp CRM powered by{" "}
             <a
-              href="https://nexadesk.app"
+              href="https://glowstudiodesk.app"
               style={styles.footerLink}
               target="_blank"
               rel="noopener noreferrer"
             >
-              NexaDesk
+              Glow Studio Desk
             </a>
           </p>
         </footer>

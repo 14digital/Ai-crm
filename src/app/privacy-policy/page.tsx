@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p style={styles.text}>
               Our WhatsApp communications are powered by{" "}
-              <strong>NexaDesk</strong>, a WhatsApp Business CRM platform
+              <strong>Glow Studio Desk</strong>, a WhatsApp Business CRM platform
               operated by <strong>14Digital Limited</strong> (UK), which we use
               to manage customer conversations.
             </p>
@@ -152,7 +152,7 @@ export default function PrivacyPolicyPage() {
                 you contact us via WhatsApp
               </li>
               <li style={styles.listItem}>
-                <strong>NexaDesk (14Digital Limited):</strong> Our CRM
+                <strong>Glow Studio Desk (14Digital Limited):</strong> Our CRM
                 platform which stores and manages our customer conversations
               </li>
               <li style={styles.listItem}>
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
               We use the <strong>WhatsApp Business Cloud API</strong> (operated
               by Meta Platforms, Inc.) to communicate with customers. Our
               WhatsApp inbox is managed through{" "}
-              <strong>NexaDesk</strong>, a multi-agent CRM platform. When
+              <strong>Glow Studio Desk</strong>, a multi-agent CRM platform. When
               you send us a WhatsApp message:
             </p>
             <ul style={styles.list}>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul style={styles.list}>
               <li style={styles.listItem}>
-                <strong>14Digital Limited (NexaDesk):</strong> Our CRM
+                <strong>14Digital Limited (Glow Studio Desk):</strong> Our CRM
                 platform provider — stores and manages customer conversations
               </li>
               <li style={styles.listItem}>
@@ -469,12 +469,12 @@ export default function PrivacyPolicyPage() {
             </a>
             {" "}| WhatsApp CRM powered by{" "}
             <a
-              href="https://nexadesk.app"
+              href="https://glowstudiodesk.app"
               style={styles.footerLink}
               target="_blank"
               rel="noopener noreferrer"
             >
-              NexaDesk
+              Glow Studio Desk
             </a>
           </p>
         </footer>

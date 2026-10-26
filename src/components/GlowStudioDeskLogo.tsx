@@ -8,7 +8,7 @@ interface LogoProps {
   style?: React.CSSProperties;
 }
 
-export function NexaDeskLogo({
+export function GlowStudioDeskLogo({
   size = 40,
   width,
   height,
@@ -22,7 +22,7 @@ export function NexaDeskLogo({
     return (
       <img
         src="/icon.png"
-        alt="NexaDesk"
+        alt="Glow Studio Desk"
         width={dim}
         height={dim}
         style={{ width: dim, height: dim, objectFit: "contain", ...style }}
@@ -32,33 +32,33 @@ export function NexaDeskLogo({
   }
 
   const h = height || size;
-  const textColor = theme === "white" ? "#ffffff" : "#0f172a";
+  const textColor = theme === "white" ? "#FBF7F4" : "#2A1220";
   return (
     <svg
-      viewBox="0 0 188 40"
+      viewBox="0 0 310 40"
       height={h}
       width={width || "auto"}
       style={style}
       className={className}
       role="img"
-      aria-label="NexaDesk"
+      aria-label="Glow Studio Desk"
     >
       <path
         d="M17 2C8.2 2 1 8.8 1 17.2c0 4.1 1.8 7.8 4.7 10.5L4 34l7.9-3.3c1.6.4 3.3.7 5.1.7 8.8 0 16-6.8 16-15.2S25.8 2 17 2z"
-        fill="#2f6fed"
+        fill="#D946A0"
       />
-      <circle cx="10.5" cy="17" r="2.1" fill="#ffffff" />
-      <circle cx="17" cy="17" r="2.1" fill="#ffffff" />
-      <circle cx="23.5" cy="17" r="2.1" fill="#ffffff" />
+      <circle cx="10.5" cy="17" r="2.1" fill="#FBF7F4" />
+      <circle cx="17" cy="17" r="2.1" fill="#FBF7F4" />
+      <circle cx="23.5" cy="17" r="2.1" fill="#FBF7F4" />
       <text
         x="40"
-        y="27"
-        fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif"
-        fontWeight="800"
-        fontSize="23"
+        y="28"
+        fontFamily="'Cormorant Garamond', Georgia, serif"
+        fontWeight="600"
+        fontSize="24"
         fill={textColor}
       >
-        NexaDesk
+        Glow Studio <tspan fill="#C9A961" fontStyle="italic">Desk</tspan>
       </text>
     </svg>
   );

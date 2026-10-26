@@ -6,7 +6,7 @@ import { prisma } from "./prisma";
 // notifications, not crash every module that imports this file.
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
-    process.env.VAPID_EMAIL || "mailto:admin@nexadesk.app",
+    process.env.VAPID_EMAIL || "mailto:admin@glowstudiodesk.app",
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );

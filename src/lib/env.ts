@@ -22,6 +22,6 @@ export function validateEnv(): void {
 
   const missing = REQUIRED.filter((key) => !process.env[key]);
   if (missing.length > 0) {
-    console.error(`[NexaDesk] Missing required environment variables: ${missing.join(", ")}`);
+    console.error(`[Glow Studio Desk] Missing required environment variables: ${missing.join(", ")}`);
   }
 }

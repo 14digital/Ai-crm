@@ -14,7 +14,7 @@ import {
   LogOut,
   CalendarCheck,
 } from "lucide-react";
-import { NexaDeskLogo } from "@/components/NexaDeskLogo";
+import { GlowStudioDeskLogo } from "@/components/GlowStudioDeskLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -52,7 +52,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
           alignItems: "center",
         }}
       >
-        <NexaDeskLogo
+        <GlowStudioDeskLogo
           variant="full"
           theme="white"
           height={24}

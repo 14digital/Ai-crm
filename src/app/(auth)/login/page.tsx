@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import { NexaDeskLogo } from "@/components/NexaDeskLogo";
+import { GlowStudioDeskLogo } from "@/components/GlowStudioDeskLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,15 +55,17 @@ export default function LoginPage() {
         position: "relative",
         overflow: "hidden",
         padding: 20,
+        background: "radial-gradient(120% 90% at 78% 30%, #5C1A3D 0%, #2A1220 55%, #180a12 100%)",
       }}
     >
-      {/* Background gradient */}
+      {/* Starfield, matching the Glow Studio hero */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(ellipse at 20% 50%, rgba(10,86,207,0.07) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(30,195,171,0.07) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(10,86,207,0.05) 0%, transparent 50%)",
+          pointerEvents: "none",
+          backgroundImage:
+            "radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.5) 0, transparent 100%), radial-gradient(1px 1px at 70% 65%, rgba(255,255,255,0.35) 0, transparent 100%), radial-gradient(1.5px 1.5px at 40% 80%, rgba(201,169,97,0.55) 0, transparent 100%), radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.4) 0, transparent 100%), radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.3) 0, transparent 100%)",
         }}
       />
 
@@ -84,7 +86,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-            <NexaDeskLogo variant="full" height={40} style={{ maxWidth: "280px" }} />
+            <GlowStudioDeskLogo variant="full" height={40} style={{ maxWidth: "280px" }} />
           </div>
         </div>
 

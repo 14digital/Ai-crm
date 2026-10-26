@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Inbox, Bell, BarChart2, Settings, LogOut, CalendarCheck } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
-import { NexaDeskLogo } from "@/components/NexaDeskLogo";
+import { GlowStudioDeskLogo } from "@/components/GlowStudioDeskLogo";
 
 const navItems = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
@@ -35,7 +35,7 @@ export function SalesSidebar({ userName, userId }: { userName: string; userId: s
         borderBottom: "1px solid var(--sidebar-border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <NexaDeskLogo
+          <GlowStudioDeskLogo
             variant="full"
             theme="white"
             height={22}
