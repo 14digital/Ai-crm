@@ -17,7 +17,7 @@
   --success-light: #e8f8f6;
   --bg: #f1f2f3;
   --bg-card: #FFFFFF;
-  --bg-sidebar: #0a56cf;
+  --bg-sidebar: #0b1437;
   --border: #E5E7EB;
   --border-light: #F3F4F6;
   --text-primary: #111827;
@@ -31,10 +31,12 @@
   --radius-sm: 8px;
   --radius-lg: 30px;
   /* Sidebar tokens */
-  --sidebar-bg: #0a56cf;
-  --sidebar-link: #ffffff;
+  --sidebar-bg: #0b1437;
+  --sidebar-card-bg: #141d47;
+  --sidebar-link: #8b93b8;
   --sidebar-link-active: #55c0af;
-  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-active-bg: rgba(85, 192, 175, 0.12);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
   /* Misc */
   --text-blue: #0a56cf;
   --label-color: #555;
@@ -274,7 +276,7 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: white;
-  background: var(--primary);
+  background: var(--sidebar-bg);
   border-bottom: none;
 }
 

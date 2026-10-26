@@ -1,9 +1,25 @@
 // Downloading media the applicant sends on WhatsApp.
 //
-// Twilio gives the webhook a MediaUrl directly, so this is a single fetch with
-// the account's basic auth.
+// Meta's Cloud API only gives the webhook a media id, not a direct URL — it
+// must be resolved to a short-lived signed URL first (resolveMediaUrl), then
+// downloaded with the same bearer auth.
 
 import { authHeader } from "@/lib/whatsapp";
+
+const GRAPH_API_VERSION = "v21.0";
+
+/** Resolve a Meta media id (from a webhook payload) to a short-lived download URL. */
+export async function resolveMediaUrl(mediaId: string): Promise<{ url: string; mimeType: string }> {
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_API_VERSION}/${mediaId}`, {
+    headers: { Authorization: authHeader() },
+  });
+  if (!res.ok) {
+    throw new Error(`Meta media lookup failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { url?: string; mime_type?: string };
+  if (!data.url) throw new Error("Meta media lookup returned no url");
+  return { url: data.url, mimeType: data.mime_type || "application/octet-stream" };
+}
 
 export const MAX_MEDIA_BYTES = 15 * 1024 * 1024;
 
@@ -37,7 +53,7 @@ export class UnsupportedMediaError extends Error {
 }
 
 /**
- * Download a Twilio media URL.
+ * Download a resolved media URL (see resolveMediaUrl for Meta's media ids).
  * Throws MediaTooLargeError / UnsupportedMediaError so the caller can reply with
  * a specific message rather than a generic failure.
  */
@@ -53,7 +69,7 @@ export async function downloadWhatsAppMedia(
     redirect: "follow",
   });
   if (!res.ok) {
-    throw new Error(`Twilio media download failed: ${res.status}`);
+    throw new Error(`Media download failed: ${res.status}`);
   }
 
   const buffer = Buffer.from(await res.arrayBuffer());

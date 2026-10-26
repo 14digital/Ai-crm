@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import { AssistedPulseLogo } from "@/components/AssistedPulseLogo";
+import { NexaDeskLogo } from "@/components/NexaDeskLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -84,7 +84,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-            <AssistedPulseLogo variant="full" height={52} style={{ maxWidth: "280px" }} />
+            <NexaDeskLogo variant="full" height={40} style={{ maxWidth: "280px" }} />
           </div>
         </div>
 
@@ -202,17 +202,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: 24,
-            fontSize: 13,
-            color: "var(--text-muted)",
-          }}
-        >
-          Contact your admin if you don&apos;t have an account
-        </p>
       </div>
     </div>
   );

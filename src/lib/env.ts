@@ -2,9 +2,8 @@ const REQUIRED = [
   "DATABASE_URL",
   "DIRECT_URL",
   "NEXTAUTH_SECRET",
-  "TWILIO_ACCOUNT_SID",
-  "TWILIO_AUTH_TOKEN",
-  "TWILIO_WHATSAPP_NUMBER",
+  "WHATSAPP_ACCESS_TOKEN",
+  "WHATSAPP_PHONE_NUMBER_ID",
   "GEMINI_API_KEY",
   "PUSHER_APP_ID",
   "PUSHER_KEY",
@@ -23,6 +22,6 @@ export function validateEnv(): void {
 
   const missing = REQUIRED.filter((key) => !process.env[key]);
   if (missing.length > 0) {
-    console.error(`[Assisted Pulse] Missing required environment variables: ${missing.join(", ")}`);
+    console.error(`[NexaDesk] Missing required environment variables: ${missing.join(", ")}`);
   }
 }

@@ -11,7 +11,7 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
 
   // Public routes
-  const publicRoutes = ["/login", "/magic", "/api/auth", "/api/webhook", "/api/external", "/privacy-policy", "/terms"];
+  const publicRoutes = ["/login", "/signup", "/api/signup", "/magic", "/api/auth", "/api/webhook", "/api/external", "/privacy-policy", "/terms"];
   const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
   if (isPublic) return NextResponse.next();
 

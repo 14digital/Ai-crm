@@ -82,7 +82,16 @@ export async function PATCH(
       updateData.isActive = body.isActive;
     }
 
-    if (body.resetPassword === true) {
+    const customPassword: string | undefined =
+      typeof body.customPassword === "string" ? body.customPassword : undefined;
+
+    if (customPassword && customPassword.trim()) {
+      if (customPassword.length < 6) {
+        return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+      }
+      newPassword = customPassword;
+      updateData.passwordHash = await bcrypt.hash(customPassword, 12);
+    } else if (body.resetPassword === true) {
       newPassword = crypto.randomBytes(6).toString("hex");
       updateData.passwordHash = await bcrypt.hash(newPassword, 12);
     }

@@ -25,6 +25,10 @@ export default function TeamPage() {
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SalesPerson | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [resetTarget, setResetTarget] = useState<SalesPerson | null>(null);
+  const [customPassword, setCustomPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState("");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -75,17 +79,29 @@ export default function TeamPage() {
     }
   }
 
-  async function resetPassword(id: string) {
-    const res = await fetch(`/api/admin/users/${id}`, {
+  async function submitReset(auto: boolean) {
+    if (!resetTarget) return;
+    if (!auto && customPassword.trim().length < 6) {
+      setResetError("Password must be at least 6 characters");
+      return;
+    }
+    setResetting(true);
+    setResetError("");
+    const res = await fetch(`/api/admin/users/${resetTarget.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resetPassword: true }),
+      body: JSON.stringify(auto ? { resetPassword: true } : { customPassword }),
     });
     const data = await res.json();
+    setResetting(false);
     if (res.ok && data.generatedPassword) {
+      setResetTarget(null);
+      setCustomPassword("");
       setGeneratedPassword(data.generatedPassword);
       setShowCreate(false);
-      showToast("Password reset successfully");
+      showToast("Password updated successfully");
+    } else {
+      setResetError(data.error || "Failed to update password");
     }
   }
 
@@ -190,24 +206,26 @@ export default function TeamPage() {
                   <td>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button
-                        className="btn btn-sm btn-outline"
+                        className="btn btn-sm"
                         onClick={() => toggleActive(u.id, u.isActive)}
                         title={u.isActive ? "Deactivate" : "Activate"}
+                        style={{ background: "var(--primary)", color: "white", border: "none" }}
                       >
                         {u.isActive ? <UserX size={14} /> : <UserCheck size={14} />}
                       </button>
                       <button
-                        className="btn btn-sm btn-outline"
-                        onClick={() => resetPassword(u.id)}
+                        className="btn btn-sm"
+                        onClick={() => { setResetTarget(u); setCustomPassword(""); setResetError(""); }}
                         title="Reset Password"
+                        style={{ background: "var(--primary)", color: "white", border: "none" }}
                       >
                         <KeyRound size={14} />
                       </button>
                       <button
-                        className="btn btn-sm btn-outline"
+                        className="btn btn-sm"
                         onClick={() => setDeleteTarget(u)}
                         title="Delete User"
-                        style={{ color: "var(--danger)", borderColor: "var(--danger)" }}
+                        style={{ background: "var(--danger)", color: "white", border: "none" }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -233,11 +251,11 @@ export default function TeamPage() {
               <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Full Name</label>
-                  <input className="input" placeholder="Ahmed Khan" value={createName} onChange={(e) => setCreateName(e.target.value)} required />
+                  <input className="input" placeholder="Please enter name" value={createName} onChange={(e) => setCreateName(e.target.value)} required />
                 </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Email</label>
-                  <input className="input" type="email" placeholder="ahmed@company.com" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} required />
+                  <input className="input" type="email" placeholder="Please enter email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} required />
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                   <button type="button" className="btn btn-outline" onClick={closeCreateModal} style={{ flex: 1 }}>Cancel</button>
@@ -271,6 +289,55 @@ export default function TeamPage() {
                 <button className="btn btn-outline" onClick={closeCreateModal} style={{ width: "100%" }}>Done</button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Reset password choice modal */}
+      {resetTarget && (
+        <div className="modal-overlay" onClick={() => !resetting && setResetTarget(null)}>
+          <div className="modal-content animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ padding: 32 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Reset Password</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 20 }}>
+              for {resetTarget.name}
+            </p>
+
+            <button
+              className="btn btn-outline"
+              onClick={() => submitReset(true)}
+              disabled={resetting}
+              style={{ width: "100%", marginBottom: 16, color: "var(--primary)", borderColor: "var(--primary)" }}
+            >
+              {resetting ? <span className="spinner" /> : "Generate Random Password"}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 16px" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--border-light)" }} />
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>or</span>
+              <div style={{ flex: 1, height: 1, background: "var(--border-light)" }} />
+            </div>
+
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
+              Set a custom password
+            </label>
+            <input
+              className="input"
+              type="text"
+              placeholder="At least 6 characters"
+              value={customPassword}
+              onChange={(e) => setCustomPassword(e.target.value)}
+              style={{ marginBottom: 8 }}
+            />
+            {resetError && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{resetError}</div>}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-outline" onClick={() => setResetTarget(null)} disabled={resetting} style={{ flex: 1 }}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => submitReset(false)} disabled={resetting} style={{ flex: 1 }}>
+                {resetting ? <span className="spinner" /> : "Set Password"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -5,8 +5,8 @@ import "./globals.css";
 const figtree = Figtree({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://assistedpulse.app"),
-  title: "Assisted Pulse — WhatsApp Applicant Intake",
+  metadataBase: new URL("https://nexadesk.app"),
+  title: "NexaDesk — WhatsApp Applicant Intake",
   description: "WhatsApp-powered AI Sales CRM with single number, multi-agent inbox for your sales team.",
   icons: {
     icon: [
@@ -17,16 +17,16 @@ export const metadata: Metadata = {
     apple: { url: "/icon.png", sizes: "512x512" },
   },
   openGraph: {
-    title: "Assisted Pulse — WhatsApp Applicant Intake",
+    title: "NexaDesk — WhatsApp Applicant Intake",
     description: "WhatsApp-powered AI Sales CRM with single number, multi-agent inbox for your sales team.",
-    url: "https://assistedpulse.app",
-    siteName: "Assisted Pulse",
+    url: "https://nexadesk.app",
+    siteName: "NexaDesk",
     images: [
       {
         url: "/icon.png",
         width: 512,
         height: 512,
-        alt: "Assisted Pulse Logo",
+        alt: "NexaDesk Logo",
       },
     ],
     locale: "en_US",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Assisted Pulse — WhatsApp Applicant Intake",
+    title: "NexaDesk — WhatsApp Applicant Intake",
     description: "WhatsApp-powered AI Sales CRM with single number, multi-agent inbox for your sales team.",
     images: ["/icon.png"],
   },

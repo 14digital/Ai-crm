@@ -143,6 +143,35 @@ export async function assignConversationRoundRobin(
   );
 }
 
+/**
+ * Pick the next active sales person for a new booking, round-robin, sharing the
+ * same WhatsAppConfig.rrPointer used for conversation assignment. Returns null
+ * if no sales person is active (caller should flag for a human instead).
+ */
+export async function pickRoundRobinSalesPerson(): Promise<{ id: string; name: string } | null> {
+  const activeSalesPersons = await prisma.user.findMany({
+    where: { role: "SALES_PERSON", isActive: true },
+    orderBy: { rrSequence: "asc" },
+    select: { id: true, name: true },
+  });
+
+  if (activeSalesPersons.length === 0) return null;
+
+  const config = await prisma.whatsAppConfig.findFirst({ where: { isActive: true } });
+  const pointer = (config?.rrPointer ?? 0) % activeSalesPersons.length;
+  const picked = activeSalesPersons[pointer];
+  const newPointer = (pointer + 1) % activeSalesPersons.length;
+
+  if (config) {
+    await prisma.whatsAppConfig.update({
+      where: { id: config.id },
+      data: { rrPointer: newPointer },
+    });
+  }
+
+  return picked;
+}
+
 export async function assignConversationManual(
   conversationId: string,
   assignedToId: string,

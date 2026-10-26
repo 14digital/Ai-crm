@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p style={styles.text}>
               Our WhatsApp communications are powered by{" "}
-              <strong>Assisted Pulse</strong>, a WhatsApp Business CRM platform
+              <strong>NexaDesk</strong>, a WhatsApp Business CRM platform
               operated by <strong>14Digital Limited</strong> (UK), which we use
               to manage customer conversations.
             </p>
@@ -152,7 +152,7 @@ export default function PrivacyPolicyPage() {
                 you contact us via WhatsApp
               </li>
               <li style={styles.listItem}>
-                <strong>Assisted Pulse (14Digital Limited):</strong> Our CRM
+                <strong>NexaDesk (14Digital Limited):</strong> Our CRM
                 platform which stores and manages our customer conversations
               </li>
               <li style={styles.listItem}>
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
               We use the <strong>WhatsApp Business Cloud API</strong> (operated
               by Meta Platforms, Inc.) to communicate with customers. Our
               WhatsApp inbox is managed through{" "}
-              <strong>Assisted Pulse</strong>, a multi-agent CRM platform. When
+              <strong>NexaDesk</strong>, a multi-agent CRM platform. When
               you send us a WhatsApp message:
             </p>
             <ul style={styles.list}>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul style={styles.list}>
               <li style={styles.listItem}>
-                <strong>14Digital Limited (Assisted Pulse):</strong> Our CRM
+                <strong>14Digital Limited (NexaDesk):</strong> Our CRM
                 platform provider — stores and manages customer conversations
               </li>
               <li style={styles.listItem}>
@@ -469,12 +469,12 @@ export default function PrivacyPolicyPage() {
             </a>
             {" "}| WhatsApp CRM powered by{" "}
             <a
-              href="https://assistedpulse.app"
+              href="https://nexadesk.app"
               style={styles.footerLink}
               target="_blank"
               rel="noopener noreferrer"
             >
-              Assisted Pulse
+              NexaDesk
             </a>
           </p>
         </footer>

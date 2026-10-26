@@ -12,12 +12,15 @@ import {
   FileText,
   BarChart3,
   LogOut,
+  CalendarCheck,
 } from "lucide-react";
+import { NexaDeskLogo } from "@/components/NexaDeskLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/conversations", label: "All Conversations", icon: MessageSquare },
   { href: "/queue", label: "Unassigned Queue", icon: InboxIcon },
+  { href: "/bookings", label: "Bookings", icon: CalendarCheck },
   { href: "/team", label: "Team Management", icon: Users },
   { href: "/bot-config", label: "Bot Configuration", icon: Bot },
   { href: "/templates", label: "Templates", icon: FileText },
@@ -43,16 +46,17 @@ export function AdminSidebar({ userName }: { userName: string }) {
       {/* Logo */}
       <div
         style={{
-          padding: "16px 20px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          padding: "18px 20px 16px",
+          borderBottom: "1px solid var(--sidebar-border)",
           display: "flex",
           alignItems: "center",
         }}
       >
-        <img
-          src="/logo-sidebar.png"
-          alt="Assisted Pulse"
-          style={{ height: 36, width: "auto", maxWidth: "100%", objectFit: "contain" }}
+        <NexaDeskLogo
+          variant="full"
+          theme="white"
+          height={24}
+          style={{ maxWidth: "100%" }}
         />
       </div>
 
@@ -60,7 +64,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
       <nav
         style={{
           flex: 1,
-          padding: "12px",
+          padding: "16px 12px",
           display: "flex",
           flexDirection: "column",
           gap: 2,
@@ -79,10 +83,10 @@ export function AdminSidebar({ userName }: { userName: string }) {
                 alignItems: "center",
                 gap: 10,
                 padding: "10px 12px",
-                borderRadius: 8,
+                borderRadius: 10,
                 fontSize: 14,
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? "var(--sidebar-link-active)" : "#ffffff",
+                color: isActive ? "var(--sidebar-link-active)" : "var(--sidebar-link)",
                 textDecoration: "none",
                 transition: "all 0.15s ease",
                 background: isActive ? "var(--sidebar-active-bg)" : "transparent",
@@ -99,7 +103,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
       <div
         style={{
           padding: 16,
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderTop: "1px solid var(--sidebar-border)",
         }}
       >
         <div
@@ -131,7 +135,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
             <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>
               {userName}
             </span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>
+            <span style={{ fontSize: 11, color: "var(--sidebar-link)" }}>
               Administrator
             </span>
           </div>
@@ -147,9 +151,9 @@ export function AdminSidebar({ userName }: { userName: string }) {
             borderRadius: 8,
             fontSize: 13,
             fontWeight: 500,
-            color: "#ffffff",
+            color: "var(--sidebar-link)",
             background: "none",
-            border: "1px solid rgba(255,255,255,0.1)",
+            border: "1px solid var(--sidebar-border)",
             cursor: "pointer",
             transition: "all 0.15s ease",
           }}

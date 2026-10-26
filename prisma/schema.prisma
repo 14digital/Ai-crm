@@ -51,6 +51,13 @@ enum MessageStatus {
   FAILED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -66,6 +73,7 @@ model User {
   assignedConversations Conversation[]  @relation("AssignedTo")
   assignmentLogs        AssignmentLog[] @relation("AssignedToUser")
   messagesSent          Message[]       @relation("SentBy")
+  bookings              Booking[]       @relation("BookingAssignedTo")
 
   @@index([role, isActive])
 }
@@ -120,6 +128,11 @@ model Conversation {
 
   // Notes
   internalNotes String? @db.Text
+
+  // In-progress booking fields collected by the AI concierge over WhatsApp,
+  // before enough is known to create a Booking row (customerName, service,
+  // scheduledAt, notes). Cleared once the booking is created.
+  bookingDraft Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -248,6 +261,27 @@ model ApplicantProfile {
   @@index([waNumber])
   @@index([niNumberNorm])
   @@index([emailNorm])
+}
+
+// A staff member's appointment booking for a customer (manually entered).
+model Booking {
+  id            String        @id @default(uuid())
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  service       String
+  scheduledAt   DateTime
+  status        BookingStatus @default(PENDING)
+  notes         String?       @db.Text
+
+  assignedToId String
+  assignedTo   User   @relation("BookingAssignedTo", fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([scheduledAt])
 }
 
 // Local mirror of GET /non-auth/get/branches

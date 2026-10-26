@@ -1,5 +1,118 @@
-// Twilio WhatsApp helpers.
-// All outgoing messages are sent from TWILIO_WHATSAPP_NUMBER.
+// WhatsApp Cloud API (Meta) helpers.
+// All outgoing messages are sent from WHATSAPP_PHONE_NUMBER_ID via graph.facebook.com.
+
+const GRAPH_API_VERSION = "v21.0";
+
+function getAccessToken(): string {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!token) throw new Error("WHATSAPP_ACCESS_TOKEN not set");
+  return token;
+}
+
+function getPhoneNumberId(): string {
+  const id = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!id) throw new Error("WHATSAPP_PHONE_NUMBER_ID not set");
+  return id;
+}
+
+/** Meta wants digits only (no "+", no "whatsapp:" prefix). */
+function toE164Digits(number: string): string {
+  return number.trim().replace(/[^\d]/g, "");
+}
+
+export function authHeader(): string {
+  return `Bearer ${getAccessToken()}`;
+}
+
+async function postMessage(payload: Record<string, unknown>): Promise<string> {
+  const response = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${getPhoneNumberId()}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.text().catch(() => "");
+    console.error("WhatsApp Cloud API error:", response.status, err);
+    throw new Error(`WhatsApp Cloud API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { messages?: { id?: string }[] };
+  return data.messages?.[0]?.id || "";
+}
+
+/**
+ * Send a plain text message.
+ * @returns the WhatsApp message id
+ */
+export async function sendTextMessage(
+  toNumber: string,
+  text: string
+): Promise<string> {
+  return postMessage({
+    to: toE164Digits(toNumber),
+    type: "text",
+    text: { body: text },
+  });
+}
+
+/**
+ * Send a template message. templateName must match a Meta-approved template
+ * name (as created in WhatsApp Manager), not a Twilio Content SID.
+ */
+export async function sendTemplateMessage(
+  toNumber: string,
+  templateName: string,
+  params: string[],
+  buttonUrlParam?: string
+): Promise<string> {
+  const components: Record<string, unknown>[] = [];
+
+  if (params.length > 0) {
+    components.push({
+      type: "body",
+      parameters: params.map((p) => ({ type: "text", text: p })),
+    });
+  }
+
+  if (buttonUrlParam) {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: buttonUrlParam }],
+    });
+  }
+
+  return postMessage({
+    to: toE164Digits(toNumber),
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: "en_US" },
+      ...(components.length > 0 ? { components } : {}),
+    },
+  });
+}
+
+/**
+ * Check if the 24-hour messaging window is still open
+ */
+export function isWindowOpen(lastClientMessageAt: Date | null): boolean {
+  if (!lastClientMessageAt) return false;
+  const elapsed = Date.now() - lastClientMessageAt.getTime();
+  return elapsed < 24 * 60 * 60 * 1000; // 24 hours in ms
+}
+
+/* ===========================================================================
+ * LEGACY — Twilio WhatsApp helpers (commented out, kept for reference/rollback)
+ * ===========================================================================
 
 const TWILIO_API_URL = "https://api.twilio.com/2010-04-01";
 
@@ -15,7 +128,6 @@ function getAuthToken(): string {
   return token;
 }
 
-/** Twilio addresses WhatsApp endpoints as "whatsapp:+E164". */
 function waAddress(number: string): string {
   const trimmed = number.trim();
   const e164 = trimmed.startsWith("+") ? trimmed : `+${trimmed.replace(/[^\d]/g, "")}`;
@@ -55,28 +167,10 @@ async function postMessage(params: Record<string, string>): Promise<string> {
   return data.sid || "";
 }
 
-/**
- * Send a plain text message.
- * @returns the Twilio message SID
- */
-export async function sendTextMessage(
-  toNumber: string,
-  text: string
-): Promise<string> {
-  return postMessage({
-    From: getFromNumber(),
-    To: waAddress(toNumber),
-    Body: text,
-  });
+export async function sendTextMessage(toNumber: string, text: string): Promise<string> {
+  return postMessage({ From: getFromNumber(), To: waAddress(toNumber), Body: text });
 }
 
-/**
- * Send a template message.
- *
- * Twilio templates are Content SIDs. If templateName looks like a Content SID
- * (HX...) it is sent as one with the params as ordered variables; otherwise the
- * params are substituted into the template text and sent as a normal body.
- */
 export async function sendTemplateMessage(
   toNumber: string,
   templateName: string,
@@ -87,9 +181,7 @@ export async function sendTemplateMessage(
 
   if (/^HX[0-9a-f]{32}$/i.test(templateName)) {
     const variables: Record<string, string> = {};
-    all.forEach((p, i) => {
-      variables[String(i + 1)] = p;
-    });
+    all.forEach((p, i) => { variables[String(i + 1)] = p; });
     return postMessage({
       From: getFromNumber(),
       To: waAddress(toNumber),
@@ -99,22 +191,15 @@ export async function sendTemplateMessage(
   }
 
   let body = templateName;
-  all.forEach((p, i) => {
-    body = body.split(`{{${i + 1}}}`).join(p);
-  });
+  all.forEach((p, i) => { body = body.split(`{{${i + 1}}}`).join(p); });
 
-  return postMessage({
-    From: getFromNumber(),
-    To: waAddress(toNumber),
-    Body: body,
-  });
+  return postMessage({ From: getFromNumber(), To: waAddress(toNumber), Body: body });
 }
 
-/**
- * Check if the 24-hour messaging window is still open
- */
 export function isWindowOpen(lastClientMessageAt: Date | null): boolean {
   if (!lastClientMessageAt) return false;
   const elapsed = Date.now() - lastClientMessageAt.getTime();
-  return elapsed < 24 * 60 * 60 * 1000; // 24 hours in ms
+  return elapsed < 24 * 60 * 60 * 1000;
 }
+
+ * =========================================================================== */
