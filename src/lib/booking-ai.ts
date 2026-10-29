@@ -34,7 +34,7 @@ function client(): GoogleGenAI {
   // maxDuration alongside our own manual retry in ai-processor.ts.
   return new GoogleGenAI({
     apiKey,
-    httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
+    httpOptions: { timeout: 15000, retryOptions: { attempts: 1 } },
   });
 }
 

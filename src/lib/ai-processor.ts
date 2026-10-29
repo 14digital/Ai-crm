@@ -206,16 +206,22 @@ export async function processAIReply(
       (await buildBookingHistoryContext(clientWaNumber));
 
     let aiResult;
-    try {
-      aiResult = await composeBookingReply(messages, systemPrompt, model);
-    } catch (err) {
-      // Gemini overload (503/504) is usually a few seconds, not systemic — one
-      // quick retry here recovers most of them instead of leaving the customer
-      // without a reply until their next message happens to succeed.
-      console.warn(`[booking] First attempt failed for ${conversationId}, retrying once:`, err);
-      await new Promise((r) => setTimeout(r, 3000));
-      aiResult = await composeBookingReply(messages, systemPrompt, model);
+    let lastErr: unknown;
+    const ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+      try {
+        aiResult = await composeBookingReply(messages, systemPrompt, model);
+        break;
+      } catch (err) {
+        lastErr = err;
+        // Gemini overload/timeout (503/504) is usually a few seconds, not
+        // systemic — a couple of quick retries recover most of them instead of
+        // leaving the customer with a "something went wrong" message.
+        console.warn(`[booking] Attempt ${attempt}/${ATTEMPTS} failed for ${conversationId}:`, err);
+        if (attempt < ATTEMPTS) await new Promise((r) => setTimeout(r, 2000));
+      }
     }
+    if (!aiResult) throw lastErr;
 
     // Merge whatever the model just read out of the latest message into the draft.
     // The customer's phone is always known from their WhatsApp number — the
@@ -228,6 +234,12 @@ export async function processAIReply(
       if (sanitized[key]) {
         sanitized[key] = sanitized[key].replace(/\s*[+\d][\d\s-]{6,}$/, "").trim();
       }
+    }
+    // A field the model re-emits blank/whitespace (it was only asked to repeat
+    // what's already known, never to clear it) must never overwrite a value we
+    // already have — drop empty entries instead of letting them win the merge.
+    for (const key of Object.keys(sanitized) as (keyof BookingDraft)[]) {
+      if (!sanitized[key]?.trim()) delete sanitized[key];
     }
     const updatedDraft: BookingDraft = { ...draft, ...sanitized };
     if (JSON.stringify(updatedDraft) !== JSON.stringify(draft)) {
