@@ -135,7 +135,7 @@ export function ApplicantInfoPanel({
   }
 
   async function createBookingFromDraft() {
-    if (!bookingDraft?.customerName || !bookingDraft?.service || !bookingDraft?.scheduledAt) return;
+    if (!bookingDraft?.customerName || !bookingDraft?.customerEmail || !bookingDraft?.service || !bookingDraft?.scheduledAt) return;
     setCreatingBooking(true);
     setBookingError(null);
     try {
@@ -144,7 +144,7 @@ export function ApplicantInfoPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName: bookingDraft.customerName,
-          customerEmail: bookingDraft.customerEmail || undefined,
+          customerEmail: bookingDraft.customerEmail,
           customerPhone: `+${conversation.clientWaNumber}`,
           service: bookingDraft.service,
           scheduledAt: bookingDraft.scheduledAt,
@@ -354,7 +354,7 @@ export function ApplicantInfoPanel({
                 );
               })}
 
-              {bookingDraft?.customerName && bookingDraft?.service && bookingDraft?.scheduledAt && (
+              {bookingDraft?.customerName && bookingDraft?.customerEmail && bookingDraft?.service && bookingDraft?.scheduledAt && (
                 <>
                   <button
                     onClick={createBookingFromDraft}
