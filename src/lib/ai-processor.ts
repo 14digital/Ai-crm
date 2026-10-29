@@ -293,6 +293,24 @@ export async function processAIReply(
       return;
     }
 
+    // The model said the booking is confirmed but our own data says it's
+    // incomplete (e.g. it never resolved scheduledAt) — the customer has
+    // just been told they're booked when nothing was actually created, so
+    // get a human on it rather than silently dropping it.
+    if (aiResult.ready_to_book && !draftComplete) {
+      console.warn(
+        `[booking] ${conversationId} — ready_to_book but draft incomplete: ${JSON.stringify(updatedDraft)}`
+      );
+      await flagForHuman(
+        conversationId,
+        clientWaNumber,
+        conversation.clientName,
+        `AI told the customer they're booked, but the draft is missing required fields: ${JSON.stringify(updatedDraft)}`,
+        !!conversation.assignedToId
+      );
+      return;
+    }
+
     if (aiResult.needs_human) {
       await flagForHuman(
         conversationId,
