@@ -218,7 +218,18 @@ export async function processAIReply(
     }
 
     // Merge whatever the model just read out of the latest message into the draft.
-    const updatedDraft: BookingDraft = { ...draft, ...aiResult.booking };
+    // The customer's phone is always known from their WhatsApp number — the
+    // model occasionally echoes digits the customer sent into customerName or
+    // service (e.g. "Hair Treatment 03135232204") when asked for both in one
+    // message; strip any trailing phone-number-shaped tail so it never
+    // pollutes those fields.
+    const sanitized = { ...aiResult.booking };
+    for (const key of ["customerName", "service"] as const) {
+      if (sanitized[key]) {
+        sanitized[key] = sanitized[key].replace(/\s*[+\d][\d\s-]{6,}$/, "").trim();
+      }
+    }
+    const updatedDraft: BookingDraft = { ...draft, ...sanitized };
     if (JSON.stringify(updatedDraft) !== JSON.stringify(draft)) {
       await prisma.conversation.update({
         where: { id: conversationId },

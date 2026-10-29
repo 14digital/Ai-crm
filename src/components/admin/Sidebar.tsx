@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -31,6 +32,19 @@ const navItems = [
 
 export function AdminSidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
+  const [queueCount, setQueueCount] = useState(0);
+
+  useEffect(() => {
+    function loadQueueCount() {
+      fetch("/api/admin/conversations?status=UNASSIGNED_QUEUE&limit=1")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => data && setQueueCount(data.total))
+        .catch(() => {});
+    }
+    loadQueueCount();
+    const interval = setInterval(loadQueueCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <aside
@@ -95,7 +109,17 @@ export function AdminSidebar({ userName }: { userName: string }) {
               }}
             >
               <item.icon size={18} />
-              <span>{item.label}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.href === "/queue" && queueCount > 0 && (
+                <span style={{
+                  minWidth: 18, height: 18, padding: "0 5px", borderRadius: 99,
+                  background: "var(--primary)", color: "white",
+                  fontSize: 10, fontWeight: 700, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                }}>
+                  {queueCount > 99 ? "99+" : queueCount}
+                </span>
+              )}
             </Link>
           );
         })}

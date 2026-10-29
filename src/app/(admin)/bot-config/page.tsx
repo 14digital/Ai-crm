@@ -26,12 +26,35 @@ interface TestResult {
 
 const MODEL_OPTIONS = AI_MODEL_OPTIONS;
 
+interface ServiceStatus {
+  ok: boolean;
+  error?: string;
+}
+
+interface HealthCheck {
+  gemini: ServiceStatus;
+  whatsapp: ServiceStatus;
+}
+
 export default function BotConfigPage() {
   const [config, setConfig] = useState<BotConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [health, setHealth] = useState<HealthCheck | null>(null);
+  const [checkingHealth, setCheckingHealth] = useState(true);
+
+  async function checkHealth() {
+    setCheckingHealth(true);
+    try {
+      const res = await fetch("/api/admin/bot-config/health");
+      if (res.ok) setHealth(await res.json());
+    } finally {
+      setCheckingHealth(false);
+    }
+  }
 
   const [model, setModel] = useState<string>(DEFAULT_AI_MODEL);
   const [aiEnabled, setAiEnabled] = useState(true);
@@ -54,6 +77,7 @@ export default function BotConfigPage() {
         }
         setLoading(false);
       });
+    checkHealth();
   }, []);
 
   async function save() {
@@ -112,6 +136,58 @@ export default function BotConfigPage() {
           </p>
         )}
       </div>
+
+      {!checkingHealth && health && (health.gemini.ok === false || health.whatsapp.ok === false) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+          {!health.gemini.ok && (
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px",
+              background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10,
+            }}>
+              <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#991b1b" }}>Gemini AI issue</div>
+                <div style={{ fontSize: 12, color: "#991b1b", marginTop: 2 }}>{health.gemini.error}</div>
+              </div>
+            </div>
+          )}
+          {!health.whatsapp.ok && (
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px",
+              background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10,
+            }}>
+              <AlertCircle size={18} color="#d97706" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>WhatsApp issue</div>
+                <div style={{ fontSize: 12, color: "#92400e", marginTop: 2 }}>{health.whatsapp.error}</div>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={checkHealth}
+            disabled={checkingHealth}
+            style={{
+              alignSelf: "flex-start", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+              border: "1px solid var(--border-light)", background: "var(--bg-card)",
+              color: "var(--text-secondary)", cursor: "pointer",
+            }}
+          >
+            Re-check
+          </button>
+        </div>
+      )}
+
+      {!checkingHealth && health && health.gemini.ok && health.whatsapp.ok && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
+          background: "#e8f8f6", border: "1px solid #a7e3da", borderRadius: 10, marginBottom: 20,
+        }}>
+          <CheckCircle size={18} color="#1d7a70" />
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1d7a70" }}>
+            Gemini and WhatsApp are both connected and working
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, alignItems: "start" }}>
         {/* Left: Config form */}

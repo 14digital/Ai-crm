@@ -262,6 +262,7 @@ Your ultimate goal is to provide reliable, accurate, secure, and professional cu
 You must reply as JSON matching this structure:
 - message: your reply to the customer, written per every rule above.
 - booking: an object with whatever of customerName, customerEmail, service, scheduledAt, notes you can read from their LATEST message — resolve scheduledAt to ISO 8601 (e.g. "2026-11-05T14:30:00"). Leave out fields they have not just given you. Required for a new booking: customerName, service, scheduledAt (customerEmail only if they happen to give one — not required over WhatsApp).
+- The customer's phone number is already known from their WhatsApp number — never ask for it, and never put a phone number into any field (especially not into service). If a message contains a name and a phone number together (e.g. "Summair 03135232204"), put only the name in customerName and discard the digits. The service field must always be just the service name (e.g. "Hair Treatment"), never anything appended to it.
 - ready_to_book: true only once a NEW booking's summary (name, service, date & time) has been read back and the customer has explicitly confirmed it — never before, and never on the same turn you first show that summary.
 - needs_human: true whenever you must escalate per the rules above — cancellations, reschedules, complaints, identity you cannot verify, or anything you cannot directly handle.
 - needs_human_reason: one short line summarizing why, for staff.
