@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendBookingStatusEmail } from "@/lib/mail";
 import { z } from "zod";
 
 const updateBookingSchema = z.object({
@@ -11,6 +12,7 @@ const updateBookingSchema = z.object({
   scheduledAt: z.string().min(1).optional(),
   status: z.enum(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"]).optional(),
   notes: z.string().optional(),
+  sendEmail: z.boolean().optional(),
 });
 
 async function loadOwnedBooking(id: string, userId: string, role: string) {
@@ -46,15 +48,37 @@ export async function PATCH(
     const body = await req.json();
     const data = updateBookingSchema.parse(body);
 
+    const { sendEmail, ...updateData } = data;
+
     const booking = await prisma.booking.update({
       where: { id },
       data: {
-        ...data,
-        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
+        ...updateData,
+        scheduledAt: updateData.scheduledAt ? new Date(updateData.scheduledAt) : undefined,
       },
     });
 
-    return NextResponse.json(booking);
+    let emailError: string | undefined;
+    if (sendEmail && data.status) {
+      if (!booking.customerEmail) {
+        emailError = "No email on file for this customer";
+      } else {
+        try {
+          await sendBookingStatusEmail({
+            to: booking.customerEmail,
+            customerName: booking.customerName,
+            service: booking.service,
+            scheduledAt: booking.scheduledAt,
+            status: booking.status,
+          });
+        } catch (err) {
+          console.error("Booking status email failed:", err);
+          emailError = "Email could not be sent";
+        }
+      }
+    }
+
+    return NextResponse.json({ ...booking, emailError });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });

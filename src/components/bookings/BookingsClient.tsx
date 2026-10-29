@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, XCircle, Trash2 } from "lucide-react";
+import { Plus, XCircle, Trash2, Mail } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -72,6 +72,10 @@ export function BookingsClient({ isAdmin }: { isAdmin: boolean }) {
   }
 
   async function saveCreate() {
+    if (!form.customerEmail.trim()) {
+      setFormError("Customer email is required so we can send booking confirmations");
+      return;
+    }
     setSaving(true);
     setFormError(null);
     const res = await fetch("/api/bookings", {
@@ -92,13 +96,31 @@ export function BookingsClient({ isAdmin }: { isAdmin: boolean }) {
     setSaving(false);
   }
 
-  async function updateStatus(id: string, status: string) {
-    await fetch(`/api/bookings/${id}`, {
+  const [pendingStatus, setPendingStatus] = useState<{ booking: Booking; status: string } | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+
+  async function applyStatus(id: string, status: string, sendEmail: boolean) {
+    setSendingEmail(true);
+    const res = await fetch(`/api/bookings/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, sendEmail }),
     });
+    if (res.ok) {
+      const data = await res.json();
+      if (sendEmail) {
+        setEmailNotice(data.emailError ? data.emailError : "Confirmation email sent");
+        setTimeout(() => setEmailNotice(null), 4000);
+      }
+    }
+    setSendingEmail(false);
+    setPendingStatus(null);
     load();
+  }
+
+  function updateStatus(booking: Booking, status: string) {
+    setPendingStatus({ booking, status });
   }
 
   async function deleteBooking(id: string) {
@@ -121,6 +143,59 @@ export function BookingsClient({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div style={{ padding: 24 }}>
+      {pendingStatus && (
+        <Modal title="Send confirmation email?" onClose={() => !sendingEmail && setPendingStatus(null)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--bg)", borderRadius: 10 }}>
+              <Mail size={18} color="var(--primary)" />
+              <div style={{ fontSize: 13 }}>
+                <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{pendingStatus.booking.customerName}</div>
+                <div style={{ color: "var(--text-muted)" }}>{pendingStatus.booking.customerEmail || "No email on file"}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>
+              Status is changing to <strong>{pendingStatus.status}</strong>. Do you want to email the client to let them know?
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => applyStatus(pendingStatus.booking.id, pendingStatus.status, true)}
+                disabled={sendingEmail || !pendingStatus.booking.customerEmail}
+                title={pendingStatus.booking.customerEmail ? undefined : "No email on file for this customer"}
+                style={{
+                  flex: 1, padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none",
+                  background: !pendingStatus.booking.customerEmail || sendingEmail ? "var(--border-light)" : "var(--primary)",
+                  color: !pendingStatus.booking.customerEmail || sendingEmail ? "var(--text-muted)" : "white",
+                  cursor: !pendingStatus.booking.customerEmail || sendingEmail ? "not-allowed" : "pointer",
+                }}
+              >
+                {sendingEmail ? "Sending..." : "Yes, send email"}
+              </button>
+              <button
+                onClick={() => applyStatus(pendingStatus.booking.id, pendingStatus.status, false)}
+                disabled={sendingEmail}
+                style={{
+                  padding: "9px 16px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: "1px solid var(--border-light)", background: "var(--bg-card)",
+                  color: "var(--text-secondary)", cursor: sendingEmail ? "not-allowed" : "pointer",
+                }}
+              >
+                No, just update
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {emailNotice && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 60,
+          background: "var(--sidebar-bg)", color: "white", padding: "10px 16px",
+          borderRadius: 10, fontSize: 13, boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+        }}>
+          {emailNotice}
+        </div>
+      )}
+
       {showCreate && (
         <Modal title="New Booking" onClose={() => setShowCreate(false)}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -130,7 +205,7 @@ export function BookingsClient({ isAdmin }: { isAdmin: boolean }) {
             </div>
             <div>
               <label style={labelStyle}>Customer Email</label>
-              <input type="email" value={form.customerEmail} onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} placeholder="sara@example.com" style={inputStyle} />
+              <input type="email" required value={form.customerEmail} onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} placeholder="sara@example.com" style={inputStyle} />
             </div>
             <div>
               <label style={labelStyle}>Customer Phone</label>
@@ -227,7 +302,7 @@ export function BookingsClient({ isAdmin }: { isAdmin: boolean }) {
                   <td style={{ padding: "12px 16px" }}>
                     <select
                       value={b.status}
-                      onChange={(e) => updateStatus(b.id, e.target.value)}
+                      onChange={(e) => updateStatus(b, e.target.value)}
                       className={`badge ${STATUS_BADGE[b.status]}`}
                       style={{ border: "none", cursor: "pointer", fontSize: 11 }}
                     >
