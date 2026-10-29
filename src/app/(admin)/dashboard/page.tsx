@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { MessageSquare, CheckCircle2, InboxIcon, Users } from "lucide-react";
+import { MessageSquare, CheckCircle2, InboxIcon, Users, CalendarCheck } from "lucide-react";
 
 export default async function DashboardPage() {
-  const [totalConversations, applicationsSubmitted, unassignedCount, activeSalesPersons] = await Promise.all([
+  const [totalConversations, applicationsSubmitted, unassignedCount, activeSalesPersons, totalBookings] = await Promise.all([
     prisma.conversation.count(),
     prisma.applicantProfile.count({ where: { care360ApplicantId: { not: null } } }),
     prisma.conversation.count({ where: { status: "UNASSIGNED_QUEUE" } }),
     prisma.user.count({ where: { role: "SALES_PERSON", isActive: true } }),
+    prisma.booking.count(),
   ]);
 
   const stats = [
     { label: "Total Conversations", value: totalConversations, icon: MessageSquare, color: "#0a56cf", bg: "#e7f0fc" },
+    { label: "Bookings", value: totalBookings, icon: CalendarCheck, color: "#D946A0", bg: "#FCE4F1" },
     { label: "Applications Submitted", value: applicationsSubmitted, icon: CheckCircle2, color: "#06D6A0", bg: "#D1FAE5" },
     { label: "Unassigned Queue", value: unassignedCount, icon: InboxIcon, color: "#F59E0B", bg: "#FEF3C7" },
     { label: "Active Sales Persons", value: activeSalesPersons, icon: Users, color: "#3B82F6", bg: "#DBEAFE" },
