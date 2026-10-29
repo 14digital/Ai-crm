@@ -124,9 +124,7 @@ export async function POST(req: NextRequest) {
       );
     }
     console.error("Send message error:", err);
-    return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
-    );
+    const detail = err instanceof Error ? err.message : "Failed to send message";
+    return NextResponse.json({ error: detail }, { status: 500 });
   }
 }

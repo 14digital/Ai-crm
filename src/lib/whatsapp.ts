@@ -38,9 +38,15 @@ async function postMessage(payload: Record<string, unknown>): Promise<string> {
   );
 
   if (!response.ok) {
-    const err = await response.text().catch(() => "");
-    console.error("WhatsApp Cloud API error:", response.status, err);
-    throw new Error(`WhatsApp Cloud API error: ${response.status}`);
+    const errText = await response.text().catch(() => "");
+    console.error("WhatsApp Cloud API error:", response.status, errText);
+    let detail = errText;
+    try {
+      detail = JSON.parse(errText)?.error?.message || errText;
+    } catch {
+      // not JSON — keep raw text
+    }
+    throw new Error(`WhatsApp Cloud API error (${response.status}): ${detail}`);
   }
 
   const data = (await response.json()) as { messages?: { id?: string }[] };
