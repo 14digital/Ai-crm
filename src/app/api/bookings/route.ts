@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const createBookingSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
-  customerEmail: z.string().email("A valid customer email is required"),
+  customerEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
   customerPhone: z.string().optional(),
   service: z.string().min(1, "Service is required"),
   scheduledAt: z.string().datetime().or(z.string().min(1)),
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         customerName: data.customerName,
-        customerEmail: data.customerEmail,
+        customerEmail: data.customerEmail || null,
         customerPhone: data.customerPhone || null,
         service: data.service,
         scheduledAt: new Date(data.scheduledAt),

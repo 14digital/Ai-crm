@@ -6,7 +6,7 @@ import { Plus, XCircle, Trash2 } from "lucide-react";
 interface Booking {
   id: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerPhone: string | null;
   service: string;
   scheduledAt: string;

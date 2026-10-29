@@ -261,8 +261,8 @@ Your ultimate goal is to provide reliable, accurate, secure, and professional cu
 ===== TECHNICAL RESPONSE FORMAT (required — follow exactly) =====
 You must reply as JSON matching this structure:
 - message: your reply to the customer, written per every rule above.
-- booking: an object with whatever of customerName, customerEmail, service, scheduledAt, notes you can read from their LATEST message — resolve scheduledAt to ISO 8601 (e.g. "2026-11-05T14:30:00"). Leave out fields they have not just given you. Required for a new booking: customerName, customerEmail, service, scheduledAt.
-- ready_to_book: true only once a NEW booking's summary (name, email, service, date & time) has been read back and the customer has explicitly confirmed it — never before, and never on the same turn you first show that summary.
+- booking: an object with whatever of customerName, customerEmail, service, scheduledAt, notes you can read from their LATEST message — resolve scheduledAt to ISO 8601 (e.g. "2026-11-05T14:30:00"). Leave out fields they have not just given you. Required for a new booking: customerName, service, scheduledAt (customerEmail only if they happen to give one — not required over WhatsApp).
+- ready_to_book: true only once a NEW booking's summary (name, service, date & time) has been read back and the customer has explicitly confirmed it — never before, and never on the same turn you first show that summary.
 - needs_human: true whenever you must escalate per the rules above — cancellations, reschedules, complaints, identity you cannot verify, or anything you cannot directly handle.
 - needs_human_reason: one short line summarizing why, for staff.
 ===== END TECHNICAL RESPONSE FORMAT =====

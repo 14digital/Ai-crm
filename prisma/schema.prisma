@@ -267,7 +267,7 @@ model ApplicantProfile {
 model Booking {
   id            String        @id @default(uuid())
   customerName  String
-  customerEmail String
+  customerEmail String?
   customerPhone String?
   service       String
   scheduledAt   DateTime

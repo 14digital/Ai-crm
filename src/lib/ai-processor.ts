@@ -235,7 +235,6 @@ export async function processAIReply(
     const scheduledDate = updatedDraft.scheduledAt ? new Date(updatedDraft.scheduledAt) : null;
     const draftComplete =
       !!updatedDraft.customerName &&
-      !!updatedDraft.customerEmail &&
       !!updatedDraft.service &&
       !!scheduledDate &&
       !isNaN(scheduledDate.getTime());
@@ -259,7 +258,7 @@ export async function processAIReply(
       await prisma.booking.create({
         data: {
           customerName: updatedDraft.customerName!,
-          customerEmail: updatedDraft.customerEmail!,
+          customerEmail: updatedDraft.customerEmail || null,
           customerPhone: `+${clientWaNumber}`,
           service: updatedDraft.service!,
           scheduledAt: scheduledDate,
