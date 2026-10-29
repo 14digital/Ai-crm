@@ -10,6 +10,21 @@ import { WindowExpiryBanner } from "./WindowExpiryBanner";
 import { SubmitApplicantButton, type ApplicantProfileLite } from "./SubmitApplicantButton";
 import { Search, MessageSquare, Bot, Clock } from "lucide-react";
 
+export interface BookingDraft {
+  customerName?: string;
+  customerEmail?: string;
+  service?: string;
+  scheduledAt?: string;
+  notes?: string;
+}
+
+export interface BookingLite {
+  id: string;
+  service: string;
+  scheduledAt: string;
+  status: string;
+}
+
 interface Message {
   id: string;
   conversationId: string;
@@ -69,6 +84,8 @@ export function InboxClient({
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [search, setSearch] = useState("");
   const [profile, setProfile] = useState<ApplicantProfileLite | null>(null);
+  const [bookingDraft, setBookingDraft] = useState<BookingDraft | null>(null);
+  const [bookings, setBookings] = useState<BookingLite[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
 
@@ -116,6 +133,8 @@ export function InboxClient({
       .then((data) => {
         setMessages(data.messages || []);
         setProfile(data.applicantProfile || null);
+        setBookingDraft(data.bookingDraft || null);
+        setBookings(data.bookings || []);
         setLoadingMessages(false);
       })
       .catch(() => setLoadingMessages(false));
@@ -128,6 +147,8 @@ export function InboxClient({
     if (res.ok) {
       const data = await res.json();
       setProfile(data.applicantProfile || null);
+      setBookingDraft(data.bookingDraft || null);
+      setBookings(data.bookings || []);
     }
   }, [selectedId]);
 
@@ -390,6 +411,9 @@ export function InboxClient({
           profile={profile}
           options={care360Options}
           onProfileUpdate={(updated) => setProfile(updated)}
+          bookingDraft={bookingDraft}
+          bookings={bookings}
+          onBookingCreated={(b) => setBookings((prev) => [b, ...prev])}
         />
       )}
     </div>

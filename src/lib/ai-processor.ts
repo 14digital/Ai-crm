@@ -263,7 +263,7 @@ export async function processAIReply(
           service: updatedDraft.service!,
           scheduledAt: scheduledDate,
           notes: updatedDraft.notes || null,
-          assignedToId: assignee.id,
+          assignedTo: { connect: { id: assignee.id } },
         },
       });
 

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         service: data.service,
         scheduledAt: new Date(data.scheduledAt),
         notes: data.notes || null,
-        assignedToId: session.user.id as string,
+        assignedTo: { connect: { id: session.user.id as string } },
       },
     });
 

@@ -43,5 +43,12 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({ ...conversation, applicantProfile: profile });
+  // Any bookings already created for this WhatsApp number, so the UI can show
+  // whether the booking draft on this conversation actually turned into one.
+  const bookings = await prisma.booking.findMany({
+    where: { customerPhone: `+${conversation.clientWaNumber}` },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json({ ...conversation, applicantProfile: profile, bookings });
 }

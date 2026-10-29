@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Phone, FileText, CheckCircle, ClipboardList, Lock, AlertTriangle, UserRound } from "lucide-react";
+import { Phone, FileText, CheckCircle, ClipboardList, Lock, AlertTriangle, UserRound, CalendarCheck } from "lucide-react";
+import type { BookingDraft, BookingLite } from "./InboxClient";
 import {
   ApplicantField,
 
@@ -69,22 +70,38 @@ const LONG_TEXT_FIELDS = new Set<ApplicantField>([
   "criminalRecordDetails",
 ]);
 
+const BOOKING_FIELD_LABELS: Record<keyof BookingDraft, string> = {
+  customerName: "Name",
+  service: "Service",
+  scheduledAt: "Date & Time",
+  customerEmail: "Email",
+  notes: "Notes",
+};
+
 export function ApplicantInfoPanel({
   conversation,
   profile,
   options,
   onProfileUpdate,
+  bookingDraft,
+  bookings,
+  onBookingCreated,
 }: {
   conversation: Conversation;
   profile: ApplicantProfileLite | null;
   options: Care360Options;
   onProfileUpdate?: (p: ApplicantProfileLite) => void;
+  bookingDraft?: BookingDraft | null;
+  bookings?: BookingLite[];
+  onBookingCreated?: (b: BookingLite) => void;
 }) {
   const [notes, setNotes] = useState(conversation.internalNotes || "");
   const [savingNotes, setSavingNotes] = useState(false);
   const [editingField, setEditingField] = useState<ApplicantField | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [creatingBooking, setCreatingBooking] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const savingRef = useRef(false);
 
   const locked = !!profile?.care360ApplicantId;
@@ -115,6 +132,36 @@ export function ApplicantInfoPanel({
       body: JSON.stringify({ notes }),
     });
     setSavingNotes(false);
+  }
+
+  async function createBookingFromDraft() {
+    if (!bookingDraft?.customerName || !bookingDraft?.service || !bookingDraft?.scheduledAt) return;
+    setCreatingBooking(true);
+    setBookingError(null);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: bookingDraft.customerName,
+          customerEmail: bookingDraft.customerEmail || undefined,
+          customerPhone: `+${conversation.clientWaNumber}`,
+          service: bookingDraft.service,
+          scheduledAt: bookingDraft.scheduledAt,
+          notes: bookingDraft.notes || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onBookingCreated?.(data as BookingLite);
+      } else {
+        setBookingError(data.error || "Could not create booking");
+      }
+    } catch {
+      setBookingError("Could not create booking");
+    } finally {
+      setCreatingBooking(false);
+    }
   }
 
   function startEdit(key: ApplicantField) {
@@ -255,6 +302,81 @@ export function ApplicantInfoPanel({
           )}
         </div>
       )}
+
+      {/* Booking */}
+      {(bookingDraft && Object.keys(bookingDraft).length > 0) || (bookings && bookings.length > 0) ? (
+        <div style={{ padding: "16px", borderBottom: "1px solid var(--border-light)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <CalendarCheck size={13} color="var(--text-muted)" />
+            <span style={labelStyle}>Booking</span>
+          </div>
+
+          {bookings && bookings.length > 0 ? (
+            bookings.map((b) => (
+              <div key={b.id} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                background: "#e8f8f6", borderRadius: 8, marginBottom: 8,
+              }}>
+                <CheckCircle size={15} color="#1d7a70" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1d7a70" }}>{b.service}</div>
+                  <div style={{ fontSize: 11, color: "#2a8a7f" }}>
+                    {new Date(b.scheduledAt).toLocaleString()} · {b.status}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <>
+              {(Object.keys(BOOKING_FIELD_LABELS) as (keyof BookingDraft)[]).map((key) => {
+                const value = bookingDraft?.[key];
+                return (
+                  <div key={key} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                    gap: 6, padding: "5px 0", borderBottom: "1px solid var(--bg)",
+                  }}>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
+                      {BOOKING_FIELD_LABELS[key]}
+                    </span>
+                    <span style={{
+                      fontSize: 11, textAlign: "right", maxWidth: 155,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      color: value ? "var(--text-primary)" : "var(--text-muted)",
+                      fontWeight: value ? 600 : 400,
+                    }}>
+                      {value
+                        ? key === "scheduledAt"
+                          ? new Date(value).toLocaleString()
+                          : value
+                        : "pending"}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {bookingDraft?.customerName && bookingDraft?.service && bookingDraft?.scheduledAt && (
+                <>
+                  <button
+                    onClick={createBookingFromDraft}
+                    disabled={creatingBooking}
+                    style={{
+                      width: "100%", marginTop: 10, padding: 8, borderRadius: 8,
+                      fontSize: 12, fontWeight: 600, border: "none",
+                      background: "var(--primary)", color: "white",
+                      cursor: creatingBooking ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {creatingBooking ? "Creating…" : "Create Booking"}
+                  </button>
+                  {bookingError && (
+                    <div style={{ fontSize: 10, color: "#dc2626", marginTop: 6 }}>{bookingError}</div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
 
       {/* Submitted */}
       {profile?.care360ApplicantId && (
