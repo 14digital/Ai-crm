@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   MessageSquare,
+  MessagesSquare,
   InboxIcon,
   Users,
   Bot,
@@ -18,6 +19,7 @@ import { GlowStudioDeskLogo } from "@/components/GlowStudioDeskLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/inbox", label: "Inbox", icon: MessagesSquare },
   { href: "/conversations", label: "All Conversations", icon: MessageSquare },
   { href: "/queue", label: "Unassigned Queue", icon: InboxIcon },
   { href: "/bookings", label: "Bookings", icon: CalendarCheck },
