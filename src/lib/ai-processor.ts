@@ -235,12 +235,28 @@ export async function processAIReply(
         sanitized[key] = sanitized[key].replace(/\s*[+\d][\d\s-]{6,}$/, "").trim();
       }
     }
+    // The model occasionally dumps its own reasoning into a field instead of
+    // just the value (e.g. service becoming a paragraph of "wait, looking at
+    // the history..."). A real service name is short — anything that reads
+    // like prose is not one, so drop it rather than save garbage.
+    if (sanitized.service && (sanitized.service.length > 60 || /\b(wait|looking at|i have|confirming)\b/i.test(sanitized.service))) {
+      delete sanitized.service;
+    }
     // A field the model re-emits blank/whitespace (it was only asked to repeat
     // what's already known, never to clear it) must never overwrite a value we
     // already have — drop empty entries instead of letting them win the merge.
     for (const key of Object.keys(sanitized) as (keyof BookingDraft)[]) {
       if (!sanitized[key]?.trim()) delete sanitized[key];
     }
+    // The model's prose repeatedly says "I've noted your email" without
+    // actually putting it in the structured JSON — don't depend on it for
+    // something this mechanical. An email is unambiguous to spot with a
+    // regex, so pull it straight from the customer's own latest message
+    // whenever one appears, regardless of what the model returned.
+    const lastClientMessage = [...messages].reverse().find((m) => m.senderType === "CLIENT");
+    const emailMatch = lastClientMessage?.content.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch) sanitized.customerEmail = emailMatch[0];
+
     const updatedDraft: BookingDraft = { ...draft, ...sanitized };
     if (JSON.stringify(updatedDraft) !== JSON.stringify(draft)) {
       await prisma.conversation.update({
