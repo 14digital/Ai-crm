@@ -6,6 +6,44 @@ import { composeBookingReply, BookingDraft } from "@/lib/booking-ai";
 import { sendTextMessage, isWindowOpen } from "@/lib/whatsapp";
 import { assignConversationRoundRobin, pickRoundRobinSalesPerson } from "@/lib/assignment";
 import { BOOKING_PROMPT } from "@/lib/prompts";
+import * as chrono from "chrono-node";
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Deterministic fallback for scheduledAt: the model's JSON often fails to
+ * resolve a date and time that arrived in separate messages (or just drops
+ * them even after clear confirmation), so when the structured draft still
+ * has no date/time after a turn, parse the customer's own recent messages
+ * directly with chrono instead of trusting the model for this.
+ */
+function extractScheduledAt(clientTexts: string[], refDate: Date): string | undefined {
+  let knownDate: Date | null = null;
+  let knownHour: number | null = null;
+  let knownMinute = 0;
+
+  for (const text of clientTexts) {
+    const results = chrono.parse(text, refDate, { forwardDate: true });
+    for (const r of results) {
+      const comp = r.start;
+      if (comp.isCertain("day") || comp.isCertain("weekday")) {
+        knownDate = comp.date();
+        if (comp.isCertain("hour")) {
+          knownHour = comp.get("hour")!;
+          knownMinute = comp.get("minute") || 0;
+        }
+      } else if (comp.isCertain("hour")) {
+        knownHour = comp.get("hour")!;
+        knownMinute = comp.get("minute") || 0;
+      }
+    }
+  }
+
+  if (!knownDate || knownHour === null) return undefined;
+  const d = new Date(knownDate);
+  d.setHours(knownHour, knownMinute, 0, 0);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
 
 function buildDateContext(): string {
   const now = new Date();
@@ -258,6 +296,22 @@ export async function processAIReply(
     if (emailMatch) sanitized.customerEmail = emailMatch[0];
 
     const updatedDraft: BookingDraft = { ...draft, ...sanitized };
+
+    // Same unreliability for date/time: the model regularly confirms a date
+    // and time in its reply text without the JSON ever carrying scheduledAt,
+    // even across several turns and an explicit "yes" from the customer. If
+    // it's still missing, parse the recent conversation text directly — the
+    // date often comes from the BOT's own message (e.g. "we have
+    // availability tomorrow") with the customer only confirming ("3pm",
+    // "yes"), so both sides need scanning, not just the customer's.
+    if (!updatedDraft.scheduledAt) {
+      const conversationTexts = messages
+        .map((m) => m.transcript?.trim() || m.content)
+        .filter((t): t is string => !!t);
+      const parsed = extractScheduledAt(conversationTexts, new Date());
+      if (parsed) updatedDraft.scheduledAt = parsed;
+    }
+
     if (JSON.stringify(updatedDraft) !== JSON.stringify(draft)) {
       await prisma.conversation.update({
         where: { id: conversationId },
