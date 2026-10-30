@@ -223,24 +223,42 @@ async function processIncomingMessage(message: MetaMessage, contactName: string 
   });
 
   if (!conversation) {
-    conversation = await prisma.conversation.create({
-      data: {
+    try {
+      conversation = await prisma.conversation.create({
+        data: {
+          clientWaNumber,
+          clientName: contactName,
+          status: "ACTIVE",
+          aiEnabled: true, // AI is on by default for new conversations
+          lastClientMessageAt: new Date(),
+        },
+      });
+
+      console.log(`🆕 New conversation created for ${clientWaNumber}`);
+
+      await pusherServer.trigger("private-admin", "new_conversation", {
+        conversationId: conversation.id,
         clientWaNumber,
         clientName: contactName,
-        status: "ACTIVE",
-        aiEnabled: true, // AI is on by default for new conversations
-        lastClientMessageAt: new Date(),
-      },
-    });
-
-    console.log(`🆕 New conversation created for ${clientWaNumber}`);
-
-    await pusherServer.trigger("private-admin", "new_conversation", {
-      conversationId: conversation.id,
-      clientWaNumber,
-      clientName: contactName,
-      createdAt: conversation.createdAt,
-    });
+        createdAt: conversation.createdAt,
+      });
+    } catch (err) {
+      // Meta sometimes delivers the same inbound event twice within
+      // milliseconds — two concurrent requests can both reach here seeing no
+      // existing conversation. A DB-level unique index on the active
+      // conversation per number turns the loser into this constraint error
+      // instead of a silent duplicate; just pick up the winner's row.
+      const code = (err as { code?: string }).code;
+      if (code === "P2002") {
+        conversation = await prisma.conversation.findFirst({
+          where: { clientWaNumber, status: { not: "CLOSED" } },
+          orderBy: { createdAt: "desc" },
+        });
+        if (!conversation) throw err;
+      } else {
+        throw err;
+      }
+    }
   } else {
     await prisma.conversation.update({
       where: { id: conversation.id },
